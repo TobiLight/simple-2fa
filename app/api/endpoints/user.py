@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends
 from dependency_injector.wiring import inject, Provide
 
 from app.core.container import Container
-from app.schema.user_schema import FindUserByEmail
+from app.core.dependencies import get_current_user
+from app.model.user import User
+from app.schema.user_schema import Enable2faUser, FindUserByEmail
 from app.services.user_service import UserService
 
 
@@ -17,14 +19,42 @@ router = APIRouter(
 )
 
 
-@router.get("/", summary="Get a user's info")
+@router.get("", summary="Get a user's info",
+            response_model=User)
 @inject
 def get_user(
-    user_info: FindUserByEmail,
-    service: UserService = Depends(Provide[Container.user_service])
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user)
 ):
     """"""
-    # user = service.user_repository.get()
+    return current_user
 
-    # return user
-    return {}
+
+@router.post("/otp/disable",
+             summary="Disable user 2fa",
+             response_model=User
+             )
+@inject
+def disable_2fa(
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user)
+):
+    """"""
+    user = service.disable_user_2fa(current_user.id)
+
+    return user
+
+
+@router.post("/otp/enable",
+             summary="Enable user 2fa",
+             response_model=User
+             )
+@inject
+def enable_2fa(
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user)
+):
+    """"""
+    user = service.enable_user_2fa(current_user.id)
+
+    return user

@@ -41,3 +41,8 @@ class FindUser(BaseModel):
 
 class FindUserByEmail(BaseModel):
     email: str
+
+
+class Enable2faUser(BaseModel):
+    enable_2fa: bool
+    auth_2fa_type: Optional[str] = None

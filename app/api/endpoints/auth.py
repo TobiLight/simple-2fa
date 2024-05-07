@@ -9,7 +9,6 @@ from app.core.container import Container
 from app.schema.auth_schema import OTPPayload, SignIn, SignInResponse, SignUp
 from app.schema.user_schema import User
 from app.services.auth_service import AuthService
-from app.services.user_service import UserService
 
 
 router = APIRouter(
