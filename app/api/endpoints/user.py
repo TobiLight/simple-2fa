@@ -9,7 +9,6 @@ from dependency_injector.wiring import inject, Provide
 from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
-from app.schema.user_schema import Enable2faUser, FindUserByEmail
 from app.services.user_service import UserService
 
 

@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# random
+.vscode
+2faenv
+
 # C extensions
 *.so
 

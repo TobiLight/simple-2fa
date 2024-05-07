@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 import pyotp
 from sqlalchemy import String, Uuid, cast
 from sqlalchemy.orm import Session
-from app.core.exceptions import AuthError, DuplicatedError, NotFoundError, RequestError
+from app.core.exceptions import AuthError, DuplicatedError, RequestError
 from app.core.security import verify_password
 from app.model.user import AuthType, User
 from app.repository.base_repository import BaseRepository

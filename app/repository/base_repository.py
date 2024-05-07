@@ -3,16 +3,13 @@
 """Base Repository"""
 
 
-from contextlib import AbstractContextManager
 from typing import Callable
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.config import configs
 from app.core.exceptions import DuplicatedError, NotFoundError
-from app.util.query_builder import dict_to_sqlalchemy_filter_options
 
 
 class BaseRepository:

@@ -4,16 +4,14 @@
 
 
 from datetime import timedelta
-from typing import List, Optional
-
-
+from typing import Optional
 from app.core.config import configs
 from app.core.exceptions import AuthError, RequestError, RestrictedError, ValidationError
 from app.core.security import create_access_token, get_password_hash, \
     verify_password
 from app.repository.user_repository import UserRepository
 from app.schema.auth_schema import OTPPayload, Payload, SignIn, SignInResponse, SignUp
-from app.schema.user_schema import FindUser, User
+from app.schema.user_schema import User
 from app.model.user import User as UserModel
 from app.services.base_service import BaseService
 from app.util.util import check_password_strength

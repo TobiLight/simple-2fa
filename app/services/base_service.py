@@ -21,6 +21,3 @@ class BaseService:
 
     def patch(self, id: UUID, schema):
         return self._repository.update(id, schema)
-
-    # def get_by_email(self, email:str):
-    #     return self._repository.
