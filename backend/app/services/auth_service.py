@@ -23,16 +23,6 @@ class AuthService(BaseService):
         super().__init__(user_repository)
 
     def sign_up(self, user_info: SignUp) -> User:
-        if len(user_info.password) < 7:
-            raise ValidationError("Password is too short!")
-
-        if len(user_info.password) > 10:
-            raise ValidationError(
-                detail="Password must be 7 to 10 characters long")
-
-        if not check_password_strength(user_info.password):
-            raise RequestError(detail="Password is too weak!")
-
         user_info.password = get_password_hash(user_info.password)
 
         created_user = self.user_repository.create(user_info)

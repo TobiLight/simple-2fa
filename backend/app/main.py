@@ -4,7 +4,8 @@
 
 
 from fastapi import FastAPI
-
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from app.core.config import configs
 from app.core.container import Container
 from app.util.class_object import singleton
@@ -55,6 +56,21 @@ class AppCreator:
 app_creator = AppCreator()
 
 app = app_creator.app
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_, exc):
+    errors = []
+    for error in exc.errors():
+        field = ''.join(error['loc'][1]) if len(
+            error['loc']) > 1 else error['loc'][0]
+        errors.append({
+            'field': field,
+            'message': error['msg']
+        })
+    return JSONResponse(status_code=422, content={
+        "detail": "Validation error", "errors": errors})
+
 
 db = app_creator.db
 

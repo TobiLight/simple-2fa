@@ -29,6 +29,8 @@ class User(ModelBaseInfo, BaseUser, AllOptional):
     phone_no: Optional[str]
     is_2fa_enabled: Optional[bool]
     auth_2fa_type: Optional[str]
+    otp_secret: Optional[str]
+    otp_auth_url: Optional[str]
     ...
 
 

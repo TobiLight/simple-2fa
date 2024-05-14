@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+
+.btn-primary {
+	@apply text-lg px-3 py-1 rounded-md border border-purple-500;
+}
+@tailwind utilities;

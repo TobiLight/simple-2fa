@@ -14,7 +14,8 @@ from app.services.user_service import UserService
 
 router = APIRouter(
 	prefix="/user",
-	tags=["User"]
+    tags=["User"],
+    dependencies=[Depends(get_current_user)]
 )
 
 
@@ -46,7 +47,7 @@ def disable_2fa(
 
 @router.post("/otp/enable",
              summary="Enable user 2fa",
-             response_model=User
+             response_model=User,
              )
 @inject
 def enable_2fa(
