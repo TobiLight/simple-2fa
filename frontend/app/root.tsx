@@ -8,6 +8,8 @@ import {
 
 import type { LinksFunction } from "@remix-run/node";
 import stylesheet from "~/main.css?url";
+import 'react-toastify/dist/ReactToastify.css';
+
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },

@@ -1,8 +1,7 @@
 import { ActionFunction, ActionFunctionArgs, json } from "@remix-run/node";
-import { Form, Link, useActionData } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { toast, ToastContainer } from "react-toastify";
-import { preview } from "vite";
+import { Form, Link, useActionData, useNavigate } from "@remix-run/react";
+import { useEffect, useRef, useState } from "react";
+import { Bounce, toast, ToastContainer } from "react-toastify";
 
 type ActionResult = {
   detail: string;
@@ -208,6 +207,10 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
 export default function Register() {
   const dt = useActionData() as ActionResult;
 
+  const formRef = useRef(null);
+
+  const navigate = useNavigate()
+
   const [formError, setFormError] = useState<{
     [x: string]: string | null | undefined;
   }>();
@@ -221,34 +224,63 @@ export default function Register() {
           [field]: message,
         }));
       }
-      return;
     }
-  }, [dt && dt.data]);
+
+    if (dt && dt.data && !dt.data.success && dt.data.errors.length > 0) {
+      toast.error(dt.detail, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        // theme: "light",
+        transition: Bounce,
+      });
+    }
+
+    return;
+  }, [dt]);
 
   useEffect(() => {
-    if (dt && !dt.data && dt.detail)
-      setFormError((prev) => ({
-        ...prev,
-        detail: dt.detail,
-      }));
-
+    if (dt && !dt.data) {
+      toast.error(dt.detail, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        // theme: "light",
+        transition: Bounce,
+      });
+    }
     return;
   }, [dt]);
 
   useEffect(() => {
     if (dt && dt.data && dt.data.success) {
       // create toast notification here
-			toast(dt.detail, {
-				position: "top-right",
-				autoClose: 5000,
-				hideProgressBar: false,
-				closeOnClick: true,
-				pauseOnHover: true,
-				draggable: true,
-				progress: undefined,
-				theme: "light",
-				transition: Bounce,
-				});
+      toast.success(dt.detail, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+
+      if (formRef.current !== null) {
+        formRef.current.reset()
+        setTimeout(() => {
+          navigate('/auth/login')
+        }, 5000)
+      }
     }
   }, [dt && dt.data && dt.data.success]);
 
@@ -263,9 +295,10 @@ export default function Register() {
 
   return (
     <div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-gray-100">
-			<ToastContainer />
+      <ToastContainer />
       <h1 className="text-center font-semibold text-4xl pb-12">Register</h1>
       <Form
+        ref={formRef}
         method="post"
         className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/4 rounded-md p-4 bg-white shadow-lg grid gap-6"
       >
@@ -337,7 +370,7 @@ export default function Register() {
               required
               type="tel"
               name="phone_no"
-              placeholder="+2349000000009"
+              placeholder="2349000000000"
               className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500 bg-gray"
             />
             {formError && (
@@ -371,10 +404,6 @@ export default function Register() {
               </select>
             </label>
           </div>
-
-          {formError && (
-            <p className="text-red-500 text-sm">{formError.detail}</p>
-          )}
 
           <button
             type="submit"
