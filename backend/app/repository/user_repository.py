@@ -60,7 +60,7 @@ class UserRepository(BaseRepository):
             if schema.enable_2fa:
                 user_enabled_2fa = schema.enable_2fa
 
-            if schema.authentication_type:
+            if user_enabled_2fa and schema.authentication_type:
                 user_2fa_type = AuthType.Authenticator if schema.authentication_type.lower(
                 ) == 'google-authenticator' else AuthType.Sms
 
@@ -70,6 +70,11 @@ class UserRepository(BaseRepository):
                 otp_auth_url = pyotp.totp.TOTP(otp_base32).provisioning_uri(
                     name=str(schema.email), issuer_name="2fa.com")
 
+            user = self.user_exists(schema.email)
+
+            if user:
+                raise DuplicatedError(detail="Account exists!")
+
             query = self.model(
                 id=uuid4(),
                 **schema.model_dump(),
@@ -77,12 +82,7 @@ class UserRepository(BaseRepository):
                 otp_auth_url=otp_auth_url,
                 is_2fa_enabled=user_enabled_2fa,
                 auth_2fa_type=user_2fa_type)
-
-            user = self.user_exists(str(query.email))
-
-            if user:
-                raise DuplicatedError(detail="Account exists!")
-
+            
             try:
                 session.add(query)
 

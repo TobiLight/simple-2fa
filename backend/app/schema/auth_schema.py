@@ -46,7 +46,6 @@ class SignUp(BaseModel):
 
     @field_validator('first_name')
     def check_firstname(cls, value):
-        print(type(value))
         if len(value) <= 0 or not value:
             raise ValueError("First name cannot be blank!")
 
@@ -69,6 +68,8 @@ class SignUp(BaseModel):
 
         if not check_password_strength(value):
             raise ValueError("Password is too weak!")
+        
+        return value
 
 
 class Payload(BaseModel):

@@ -1,162 +1,395 @@
 import { ActionFunction, ActionFunctionArgs, json } from "@remix-run/node";
 import { Form, Link, useActionData } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import { preview } from "vite";
 
-type ActionError = {
-	detail: string
-	errors: Array<{
-		field: string
-		message: string
-	}>
-}
+type ActionResult = {
+  detail: string;
+  data: {
+    success?: {
+      email: string;
+      first_name: string;
+      last_name: string;
+      phone_no: string;
+      id: string;
+      created_at: string;
+      // updated_at: "2024-05-10T17:15:41.959Z",
+      is_2fa_enabled: Boolean;
+      auth_2fa_type: string;
+    };
+    errors: Array<{
+      field: string;
+      message: string;
+    }>;
+  };
+};
 
-type ActionSuccess = {
-	email: string,
-	first_name: string,
-	last_name: string,
-	phone_no: string,
-	id: string,
-	created_at: string,
-	// updated_at: "2024-05-10T17:15:41.959Z",
-	is_2fa_enabled: Boolean,
-	auth_2fa_type: string
+function checkPasswordStrength(password: string) {
+  /**
+	This function checks the strength of a password based on the following criteria:
+	- Minimum length (configurable)
+	- One uppercase character (A-Z)
+	- One lowercase character (a-z)
+	- One special character (!@#$%^&*()_+-=[]{};':|\,.<>/?)
+	- One digit (0-9)
+  
+	Strength is rated as:
+	- Very Weak (less than 4 criteria met)
+	- Weak (4 criteria met)
+	- Medium (5 criteria met)
+	- Strong (6 criteria met, including minimum length of 8)
+	- Very Strong (all criteria met, including minimum length of 12)
+	*/
+
+  // Define minimum length requirement (you can adjust this value)
+  const MIN_LENGTH = 7;
+
+  // Regular expressions for different character classes
+  const uppercaseRegex = /[A-Z]/;
+  const lowercaseRegex = /[a-z]/;
+  const specialCharRegex = /[^a-zA-Z\d\s]/;
+  const digitRegex = /\d/;
+
+  // Check if all character classes are present and count them
+  let strengthScore = 0;
+
+  strengthScore += uppercaseRegex.test(password) ? 1 : 0;
+  strengthScore += lowercaseRegex.test(password) ? 1 : 0;
+  strengthScore += specialCharRegex.test(password) ? 1 : 0;
+  strengthScore += digitRegex.test(password) ? 1 : 0;
+
+  // Additional check for minimum length
+  if (password.length >= MIN_LENGTH) {
+    strengthScore += 2;
+  }
+
+  // Password strength based on score: (adjust labels as needed)
+  const strengthLabels = [
+    "Very Weak",
+    "Weak",
+    "Medium",
+    "Strong",
+    "Very Strong",
+  ];
+
+  return strengthScore - 1 >= 3;
 }
 
 export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
-	const form = await request.formData()
+  let errors: ActionResult = {
+    detail: "Field validation error",
+    data: {
+      // success: undefined,
+      errors: [],
+    },
+  };
 
-	let firstName = form.get('first_name') as string || null
+  const form = await request.formData();
 
-	let lastName = form.get('last_name') as string || null
+  let firstName = (form.get("first_name") as string) || null;
 
-	let email = form.get("email") as string
+  let lastName = (form.get("last_name") as string) || null;
 
-	let password = form.get("password") as string
+  let email = form.get("email") as string;
 
-	let phone_no = form.get("phone_no") as string
+  let password = form.get("password") as string;
 
-	let enable2fa = form.get("enable_2fa") as string
+  let phone_no = form.get("phone_no") as string;
 
-	let authenticationType = form.get("authentication_type") as string
+  let enable2fa = form.get("enable_2fa") as string;
 
-	console.log("enable2fa", enable2fa)
+  let authenticationType = form.get("authentication_type") as string;
 
+  if (!firstName || !firstName.length)
+    errors = {
+      detail: "Field validation error",
+      data: {
+        errors: [
+          {
+            field: "first_name",
+            message: "First name is required!",
+          },
+        ],
+      },
+    };
 
-	try {
-		const formRequest = await fetch("http://localhost:8000/auth/register", {
-			method: "POST",
-			body: JSON.stringify({
-				"first_name": firstName,
-				"last_name": lastName,
-				"email": email,
-				"password": password,
-				"phone_no": phone_no,
-				"enable_2fa": enable2fa.toLocaleLowerCase() === 'yes' ? true : false,
-				"authentication_type": authenticationType
-			}),
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-		})
+  if (!lastName || !lastName.length)
+    errors.data.errors.push({
+      field: "last_name",
+      message: "Last name is required!",
+    });
 
-		if (formRequest.status !== 200) {
-			let error = await formRequest.json() as ActionError
+  if (!email.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/))
+    errors.data.errors.push({
+      field: "email",
+      message: "Invalid email address",
+    });
 
-			throw error
-		}
+  if (password.length < 7)
+    errors.data.errors.push({
+      field: "password",
+      message: "Password is too short!",
+    });
+  else if (password.length > 10)
+    errors.data.errors.push({
+      field: "password",
+      message: "Password must be 7 to 10 characters long",
+    });
+  else if (!checkPasswordStrength(password))
+    errors.data.errors.push({
+      field: "password",
+      message: "Password is too weak!",
+    });
 
-		const data = await formRequest.json() as ActionSuccess
+  if (!phone_no.match("[0-9]+"))
+    errors.data.errors.push({
+      field: "phone_no",
+      message: "Phone number is invalid!",
+    });
 
-		return json({ ...data }, { status: 201 })
-	} catch (err: any) {
-		let error = err as ActionError
+  if (!phone_no.match("^234"))
+    errors.data.errors.push({
+      field: "phone_no",
+      message: "Phone number must start with 234",
+    });
 
-		return json({ ...error }, { status: 400 })
-	}
+  if (phone_no.length > 13 || phone_no.length < 13)
+    errors.data.errors.push({
+      field: "phone_no",
+      message: "Phone number is invalid!",
+    });
+
+  if (errors.data.errors.length > 0)
+    return json({ ...errors }, { status: 400 });
+
+  try {
+    const formRequest = await fetch("http://localhost:8000/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        password: password,
+        phone_no: phone_no,
+        enable_2fa: enable2fa.toLocaleLowerCase() === "yes" ? true : false,
+        authentication_type: authenticationType,
+      }),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (formRequest.status !== 200 && formRequest.status !== 201) {
+      let error = (await formRequest.json()) as ActionResult;
+
+      throw error;
+    }
+
+    const response = await formRequest.json();
+
+    const data: ActionResult = {
+      detail: "Registration successful!",
+      data: {
+        errors: [],
+        success: { ...response },
+      },
+    };
+
+    return json({ ...data }, { status: 201 });
+  } catch (err: any) {
+    let error = err as ActionResult;
+
+    return json({ ...error }, { status: 400 });
+  }
 }
 
 export default function Register() {
-	const data = useActionData() as ActionError & ActionSuccess
+  const dt = useActionData() as ActionResult;
 
-	const [errors, setErrors] = useState<ActionError>()
+  const [formError, setFormError] = useState<{
+    [x: string]: string | null | undefined;
+  }>();
 
-	const [formError, setFormError] = useState<Record<string, any>>()
+  useEffect(() => {
+    if (dt && dt.data && dt.data.errors) {
+      for (let { field, message } of dt.data.errors) {
+        setFormError((prev) => ({
+          ...prev,
+          detail: dt.detail,
+          [field]: message,
+        }));
+      }
+      return;
+    }
+  }, [dt && dt.data]);
 
+  useEffect(() => {
+    if (dt && !dt.data && dt.detail)
+      setFormError((prev) => ({
+        ...prev,
+        detail: dt.detail,
+      }));
 
-	useEffect(() => {
-		if (data && data.detail) {
-			for (let { field, message } of data.errors) {
-				setFormError(prev => ({
-					...prev,
-					[field]: message
-				}))
-			}
-		}
-	}, [data])
+    return;
+  }, [dt]);
 
-	console.log(formError)
+  useEffect(() => {
+    if (dt && dt.data && dt.data.success) {
+      // create toast notification here
+			toast(dt.detail, {
+				position: "top-right",
+				autoClose: 5000,
+				hideProgressBar: false,
+				closeOnClick: true,
+				pauseOnHover: true,
+				draggable: true,
+				progress: undefined,
+				theme: "light",
+				transition: Bounce,
+				});
+    }
+  }, [dt && dt.data && dt.data.success]);
 
-	return (
-		<div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-gray-100">
-			<h1 className="text-center font-semibold text-4xl pb-12">Register</h1>
-			<Form method="post" className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/4 rounded-md p-4 bg-white shadow-lg grid gap-6">
-				<div className="grid gap-4">
-					<div className="grid grid-cols-2 gap-8 items-center">
-						<label htmlFor="first_name">
-							First name
-							<input type="text" name="first_name" placeholder="John" className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500" />
-							{formError && <p className="text-red-500 text-sm">{formError.first_name}</p>}
-						</label>
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormError((prevError) => ({
+      ...prevError,
+      [name]: value === "" ? undefined : null,
+      detail: "",
+    }));
+  };
 
-						<label htmlFor="last_name">
-							Last name
-							<input type="text" name="last_name" placeholder="Doe" className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500" />
-							{formError && <p className="text-red-500 text-sm">{formError.last_name}</p>}
-						</label>
-					</div>
+  return (
+    <div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-gray-100">
+			<ToastContainer />
+      <h1 className="text-center font-semibold text-4xl pb-12">Register</h1>
+      <Form
+        method="post"
+        className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/4 rounded-md p-4 bg-white shadow-lg grid gap-6"
+      >
+        <div className="grid gap-4">
+          <div className="grid sm:grid-cols-2 gap-8 items-center">
+            <label htmlFor="first_name">
+              First name
+              <input
+                onChange={handleInputChange}
+                type="text"
+                name="first_name"
+                placeholder="John"
+                className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500"
+              />
+              {formError && (
+                <p className="text-red-500 text-sm">{formError.first_name}</p>
+              )}
+            </label>
 
-					<label htmlFor="email">
-						Email
-						<input required name="email" type="email" placeholder="johndoe@example.com" className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500" />
-						{formError && <p className="text-red-500 text-sm">{formError.email}</p>}
-					</label>
+            <label htmlFor="last_name">
+              Last name
+              <input
+                onChange={handleInputChange}
+                type="text"
+                name="last_name"
+                placeholder="Doe"
+                className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500"
+              />
+              {formError && (
+                <p className="text-red-500 text-sm">{formError.last_name}</p>
+              )}
+            </label>
+          </div>
 
-					<label htmlFor="password">
-						Password
-						<input required name="password" type="password" placeholder="********" className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500" />
-						{formError && <p className="text-red-500 text-sm">{formError.password}</p>}
-					</label>
+          <label htmlFor="email">
+            Email
+            <input
+              onChange={handleInputChange}
+              required
+              name="email"
+              type="email"
+              placeholder="johndoe@example.com"
+              className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500"
+            />
+            {formError && (
+              <p className="text-red-500 text-sm">{formError.email}</p>
+            )}
+          </label>
 
-					<label htmlFor="phone">
-						Phone No
-						<input required type="tel" name="phone_no" placeholder="+2349000000009" className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500 bg-gray" />
-					</label>
-					<div className="grid lg:grid-cols-2 gap-8 items-center">
-						<label htmlFor="enable_2fa" className="grid">
-							Enable 2FA
-							<select name="enable_2fa" id="enable-2fa" className="p-2 border w-[content] focus:outline-purple-500">
-								<option value="">Choose an option</option>
-								<option value="yes">Yes</option>
-								<option value="no">No</option>
-							</select>
-						</label>
-						<label htmlFor="authentication_type" className="grid">
-							2FA Authentication Type
-							<select name="authentication-type" id="authentication-type" className="p-2 border w-[content] focus:outline-purple-500">
-								<option value="Google-Authenticator">Google Authenticator</option>
-								<option value="SMS">SMS</option>
-							</select>
-						</label>
-					</div>
+          <label htmlFor="password">
+            Password
+            <input
+              onChange={handleInputChange}
+              required
+              name="password"
+              type="password"
+              placeholder="********"
+              className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500"
+            />
+            {formError && (
+              <p className="text-red-500 text-sm">{formError.password}</p>
+            )}
+          </label>
 
-					<button type="submit" className="btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-8">Create account</button>
-				</div>
-				<div className="flex items-center gap-1">
-					<p>Have an account?</p>
-					<Link to="/auth/login" className="font-bold text-purple-500">Login</Link>
-				</div>
-			</Form>
-		</div>
-	)
+          <label htmlFor="phone">
+            Phone No
+            <input
+              onChange={handleInputChange}
+              required
+              type="tel"
+              name="phone_no"
+              placeholder="+2349000000009"
+              className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500 bg-gray"
+            />
+            {formError && (
+              <p className="text-red-500 text-sm">{formError.phone_no}</p>
+            )}
+          </label>
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            <label htmlFor="enable_2fa" className="grid">
+              Enable 2FA
+              <select
+                name="enable_2fa"
+                id="enable-2fa"
+                className="p-2 border w-[content] focus:outline-purple-500"
+              >
+                <option value="">Choose an option</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+            <label htmlFor="authentication_type" className="grid">
+              2FA Authentication Type
+              <select
+                name="authentication_type"
+                id="authentication-type"
+                className="p-2 border w-[content] focus:outline-purple-500"
+              >
+                <option value="Google-Authenticator">
+                  Google Authenticator
+                </option>
+                <option value="SMS">SMS</option>
+              </select>
+            </label>
+          </div>
+
+          {formError && (
+            <p className="text-red-500 text-sm">{formError.detail}</p>
+          )}
+
+          <button
+            type="submit"
+            className="btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-8"
+          >
+            Create account
+          </button>
+        </div>
+        <div className="flex items-center gap-1">
+          <p>Have an account?</p>
+          <Link to="/auth/login" className="font-bold text-purple-500">
+            Login
+          </Link>
+        </div>
+      </Form>
+    </div>
+  );
 }

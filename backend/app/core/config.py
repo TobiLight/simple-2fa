@@ -18,10 +18,10 @@ class Configs(BaseSettings):
     ENV: str = os.getenv("ENV", "dev")
     PROJECT_NAME: str = "2fa"
     ENV_DATABASE_MAPPER: dict = {
-        "prod": "2fa-prod",
-        "stage": "2fa-stage",
-        "dev": "2fa-dev",
-        "test": "2fa-test",
+        "prod": "2fa_prod",
+        "stage": "2fa_stage",
+        "dev": "2fa_dev",
+        "test": "2fa_test",
     }
     DB_ENGINE_MAPPER: dict = {
         "postgresql": "postgresql",
