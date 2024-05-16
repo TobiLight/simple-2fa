@@ -10,7 +10,7 @@ from app.core.exceptions import AuthError, RequestError, RestrictedError, Valida
 from app.core.security import create_access_token, get_password_hash, \
     verify_password
 from app.repository.user_repository import UserRepository
-from app.schema.auth_schema import OTPPayload, Payload, SignIn, SignInResponse, SignUp
+from app.schema.auth_schema import OTPPayload, OTPResponse, Payload, SignIn, SignInResponse, SignUp
 from app.schema.user_schema import User
 from app.model.user import User as UserModel
 from app.services.base_service import BaseService
@@ -47,6 +47,7 @@ class AuthService(BaseService):
         delattr(user, "password")
 
         if user.is_2fa_enabled:
+            return SignInResponse(is_2fa_enabled=True, auth_2fa_type=user.auth_2fa_type)
             raise RestrictedError(detail="2FA required!")
 
         payload = Payload(
@@ -78,11 +79,14 @@ class AuthService(BaseService):
             name=user.first_name + " " + user.last_name,
         )
 
+        print("token payload", token_payload)
+
         token_lifespan = timedelta(
             minutes=configs.ACCESS_TOKEN_EXPIRE_MINUTES)
 
         access_token, expiration_datetime = create_access_token(
             token_payload.model_dump(), token_lifespan)
+            
 
         sign_in_result = {
             "access_token": access_token,
@@ -90,4 +94,6 @@ class AuthService(BaseService):
             "user_info": user,
         }
 
-        return SignInResponse(**sign_in_result)
+        print("sign in response", sign_in_result)
+
+        return OTPResponse(**sign_in_result)

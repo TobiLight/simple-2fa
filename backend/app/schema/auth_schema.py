@@ -79,6 +79,14 @@ class Payload(BaseModel):
 
 
 class SignInResponse(BaseModel):
+    # access_token: str
+    # expiration: datetime
+    # user_info: User
+
+    is_2fa_enabled: bool
+    auth_2fa_type: Optional[str]
+
+class OTPResponse(BaseModel):
     access_token: str
     expiration: datetime
     user_info: User

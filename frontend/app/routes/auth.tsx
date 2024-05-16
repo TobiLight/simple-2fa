@@ -1,4 +1,6 @@
 import { Link, Outlet } from "@remix-run/react"
+import BTMLogo from "/images/btm_logo.png?url"
+import ShellLogo from "/images/shell_logo.png?url"
 
 function AuthLayout() {
 	return (

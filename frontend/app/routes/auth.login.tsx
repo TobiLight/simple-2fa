@@ -1,29 +1,254 @@
-import { Link } from "@remix-run/react";
+import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form, Link, useActionData } from "@remix-run/react";
+import { useEffect, useState } from "react";
+import { Bounce, toast, ToastContainer } from "react-toastify";
+import OTPForm from "~/components/OTPForm";
+
+type ActionResult = {
+  detail: string;
+  data: {
+    success?: {
+      is_2fa_enabled: Boolean;
+      auth_2fa_type: string;
+    };
+    errors: Array<{
+      field: string;
+      message: string;
+    }>;
+  };
+};
+
+export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
+  let errors: ActionResult = {
+    detail: "Field validation error",
+    data: {
+      // success: undefined,
+      errors: [],
+    },
+  };
+
+  const form = await request.formData();
+
+  const formType = form.get("form_type");
+
+  const email = form.get("email") as string;
+  const password = form.get("password") as string;
+
+  const otp = form.get("otp") as string;
+
+  if (formType === "login")
+    if (!email.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/))
+      errors.data.errors.push({
+        field: "email",
+        message: "Invalid email address",
+      });
+
+  if (errors.data.errors.length > 0)
+    return json({ ...errors }, { status: 400 });
+
+  try {
+    if (formType === "otp-verification") {
+		console.log(email, password)
+      const formRequest = await fetch("http://localhost:8000/auth/otp/verify", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          otp: otp,
+        }),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (formRequest.status === 200) {
+        const response = await formRequest.json();
+
+        console.log("otp", response);
+      }
+
+	  console.log('otpp', await formRequest.json())
+
+      return {};
+    }
+    const formRequest = await fetch("http://localhost:8000/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: email,
+        password: password,
+      }),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (formRequest.status !== 200 && formRequest.status !== 201) {
+      let error = (await formRequest.json()) as ActionResult;
+
+      throw error;
+    }
+
+    const response = await formRequest.json();
+
+    const data: ActionResult = {
+      detail: "Login successful!",
+      data: {
+        errors: [],
+        success: { ...response },
+      },
+    };
+
+    return json({ ...data }, { status: 200 });
+    // return redirect("/");
+  } catch (err: any) {
+    let error = err as ActionResult;
+
+    return json({ ...error }, { status: 400 });
+  }
+}
 
 export default function Login() {
-	return (
-		<div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-gray-100">
-			<h1 className="text-center font-semibold text-4xl pb-12">Login</h1>
+  const loginAction = useActionData() as ActionResult;
+  const [showOTPForm, setShowOTPForm] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-			<form action="" method="POST" className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/5 rounded-md p-4 bg-white shadow-lg grid gap-6">
-				<div className="grid gap-4">
-					<label htmlFor="email">
-						Email
-						<input required type="email" placeholder="johndoe@example.com" className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500" />
-					</label>
+  const [email, setEmail] = useState<string>("")
+  const [password, setPassword] = useState<string>("")
 
-					<label htmlFor="password">
-						Password
-						<input required type="password" placeholder="********" className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500" />
-					</label>
+  const [formError, setFormError] = useState<{
+    [x: string]: string | null | undefined;
+  }>();
 
-					<button className="btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-3">Login</button>
-				</div>
-				<div className="flex items-center gap-1">
-					<p>Need an account?</p>
-					<Link to="/auth/register" className="font-bold text-purple-500">Create one here</Link>
-				</div>
-			</form>
-		</div>
-	)
+  useEffect(() => {
+    setIsLoading(false);
+
+    if (loginAction && loginAction.data && loginAction.data.errors) {
+      for (let { field, message } of loginAction.data.errors) {
+        setFormError((prev) => ({
+          ...prev,
+          [field]: message,
+        }));
+      }
+    }
+  }, [loginAction]);
+
+  useEffect(() => {
+    setIsLoading(false);
+
+    if (loginAction && !loginAction.data) {
+      toast.error(loginAction.detail, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        // theme: "light",
+        transition: Bounce,
+      });
+    }
+  }, [loginAction]);
+
+  useEffect(() => {
+    setIsLoading(false);
+    if (loginAction && loginAction.data && loginAction.data.success) {
+      if (
+        loginAction.data.success.auth_2fa_type.includes("Google-Authenticator")
+      ) {
+        setShowOTPForm(true);
+        console.log('password', password)
+		// localStorage.setItem('user', JSON.stringify({loginAction.data.success.}))
+      }
+    }
+    return;
+  }, [loginAction]);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormError((prevError) => ({
+      ...prevError,
+      [name]: value === "" ? undefined : null,
+      detail: "",
+    }));
+  };
+
+  return (
+    <div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-purple-500">
+      <ToastContainer />
+      {!showOTPForm ? (
+        <div className="w-full">
+          <h1 className="text-center font-semibold text-4xl text-yellow-300 pb-12">
+            Login
+          </h1>
+          <Form
+            onSubmit={() => setIsLoading(true)}
+            method="POST"
+            className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/5 rounded-md p-4 bg-white shadow-lg grid gap-6"
+          >
+            <input type="hidden" name="form_type" value="login" />
+            <div className="grid gap-4">
+              <label
+                htmlFor="email"
+                className={`${
+                  formError && formError.email ? "text-red-500" : ""
+                }`}
+              >
+                Email
+                <input
+                  onChange={(e) => {
+                    handleInputChange(e)
+                    setEmail(e.currentTarget.value)
+                  }}
+                  required
+                  name="email"
+                  type="email"
+                  placeholder="johndoe@example.com"
+                  className={`${
+                    formError && formError.email ? "border-red-500" : ""
+                  } px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500`}
+                />
+                {formError && (
+                  <p className="text-red-500 text-sm">{formError.email}</p>
+                )}
+              </label>
+
+              <label htmlFor="password">
+                Password
+                <input
+                onChange={(e) => {
+                  setPassword(e.currentTarget.value)
+                }}
+                  required
+                  name="password"
+                  type="password"
+                  placeholder="********"
+                  className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500"
+                />
+              </label>
+
+              <button
+                disabled={isLoading}
+                className={`${
+                  isLoading ? "opacity-50" : ""
+                } btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-3`}
+              >
+                {isLoading ? "Please wait..." : "Login"}
+              </button>
+            </div>
+            <div className="flex items-center gap-1">
+              <p>Need an account?</p>
+              <Link to="/auth/register" className="font-bold text-purple-500">
+                Create one here
+              </Link>
+            </div>
+          </Form>
+        </div>
+      ) : (
+        <OTPForm email={email} password={password} />
+      )}
+    </div>
+  );
 }

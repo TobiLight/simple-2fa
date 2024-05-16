@@ -3,7 +3,7 @@ import { Form, Link, useActionData, useNavigate } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 
-type ActionResult = {
+type AuthActionResult = {
   detail: string;
   data: {
     success?: {
@@ -76,7 +76,7 @@ function checkPasswordStrength(password: string) {
 }
 
 export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
-  let errors: ActionResult = {
+  let errors: AuthActionResult = {
     detail: "Field validation error",
     data: {
       // success: undefined,
@@ -181,14 +181,14 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
     });
 
     if (formRequest.status !== 200 && formRequest.status !== 201) {
-      let error = (await formRequest.json()) as ActionResult;
+      let error = (await formRequest.json()) as AuthActionResult;
 
       throw error;
     }
 
     const response = await formRequest.json();
 
-    const data: ActionResult = {
+    const data: AuthActionResult = {
       detail: "Registration successful!",
       data: {
         errors: [],
@@ -198,14 +198,14 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
 
     return json({ ...data }, { status: 201 });
   } catch (err: any) {
-    let error = err as ActionResult;
+    let error = err as AuthActionResult;
 
     return json({ ...error }, { status: 400 });
   }
 }
 
 export default function Register() {
-  const dt = useActionData() as ActionResult;
+  const dt = useActionData() as AuthActionResult;
 
   const formRef = useRef(null);
 
@@ -265,7 +265,7 @@ export default function Register() {
       // create toast notification here
       toast.success(dt.detail, {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -279,7 +279,7 @@ export default function Register() {
         formRef.current.reset()
         setTimeout(() => {
           navigate('/auth/login')
-        }, 5000)
+        }, 3500)
       }
     }
   }, [dt && dt.data && dt.data.success]);

@@ -126,6 +126,7 @@ class UserRepository(BaseRepository):
         if not is_valid_otp:
             raise AuthError(detail="Invalid OTP or login")
 
+        print("user", user)
         return user
 
     def disable_2fa(self, user_id: UUID):
