@@ -49,6 +49,10 @@ class User(BaseModel, table=True):
 
     is_2fa_enabled: bool = Field(sa_column=Column(Boolean, default=False))
 
+    is_2fa_setup: bool = Field(sa_column=Column(Boolean, default=False))
+
+    is_otp_verified: bool = Field(sa_column=Column(Boolean, default=False))
+
     auth_2fa_type: Optional[AuthType] = Field(
         default=None, nullable=True)
 

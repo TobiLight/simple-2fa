@@ -6,6 +6,7 @@
 from typing import Callable, Optional
 from uuid import UUID, uuid4
 import pyotp
+from requests import session
 from sqlalchemy import String, Uuid, cast
 from sqlalchemy.orm import Session
 from app.core.exceptions import AuthError, DuplicatedError, RequestError
@@ -54,21 +55,26 @@ class UserRepository(BaseRepository):
             user_2fa_type: Optional[AuthType] = None
             user_enabled_2fa: bool = False
 
-            otp_base32: Optional[str] = None
-            otp_auth_url: Optional[str] = None
+            # otp_base32: Optional[str] = None
+            # otp_auth_url: Optional[str] = None
 
-            if schema.enable_2fa:
-                user_enabled_2fa = schema.enable_2fa
+            # if schema.enable_2fa:
+            #     user_enabled_2fa = schema.enable_2fa
 
-            if user_enabled_2fa and schema.authentication_type:
-                user_2fa_type = AuthType.Authenticator if schema.authentication_type.lower(
-                ) == 'google-authenticator' else AuthType.Sms
+            # if user_enabled_2fa and schema.authentication_type:
+            #     user_2fa_type = AuthType.Authenticator if schema.authentication_type.lower(
+            #     ) == 'google-authenticator' else AuthType.Sms
 
-            if user_2fa_type == AuthType.Authenticator:
-                otp_base32 = pyotp.random_base32()
+            # if user_2fa_type == AuthType.Authenticator:
+            #     otp_base32 = pyotp.random_base32()
 
-                otp_auth_url = pyotp.totp.TOTP(otp_base32).provisioning_uri(
-                    name=str(schema.email), issuer_name="2fa.com")
+            #     otp_auth_url = pyotp.totp.TOTP(otp_base32).provisioning_uri(
+            #         name=str(schema.email), issuer_name="2fa.com")
+
+            otp_base32 = pyotp.random_base32()
+
+            otp_auth_url = pyotp.totp.TOTP(otp_base32).provisioning_uri(
+                name=str(schema.email), issuer_name="2fa.com")
 
             user = self.user_exists(schema.email)
 
@@ -80,9 +86,9 @@ class UserRepository(BaseRepository):
                 **schema.model_dump(),
                 otp_secret=otp_base32,
                 otp_auth_url=otp_auth_url,
-                is_2fa_enabled=user_enabled_2fa,
-                auth_2fa_type=user_2fa_type)
-            
+                is_2fa_enabled=True,
+                auth_2fa_type=AuthType.Authenticator)
+
             try:
                 session.add(query)
 
@@ -103,31 +109,47 @@ class UserRepository(BaseRepository):
 
         return query.is_2fa_enabled
 
-    def verify_otp(self, payload: OTPPayload) -> User:
+    def verify_otp_user(self, otp: str, user_id: str) -> Optional[User]:
         """"""
-        user = self.get_by_email(payload.email)
+        # with self.session_factory() as session:
 
-        if user is None:
-            raise AuthError(detail="Invalid OTP or login!")
+        # user = self.get_by_id(user_id)
 
-        if not verify_password(payload.password, user.password):
-            raise AuthError(detail="Incorrect email or password")
+        # if user is None:
+        #     raise AuthError(detail="Invalid OTP or login!")
 
-        totp: Optional[pyotp.TOTP] = None
 
-        is_valid_otp: bool = False
+        with self.session_factory() as session:
+            query = session.get(self.model, user_id)
 
-        if user.otp_secret:
-            totp = pyotp.TOTP(user.otp_secret)
+            if query is not None:
+                totp: Optional[pyotp.TOTP] = None
 
-        if totp is not None:
-            is_valid_otp = totp.verify(payload.otp)
+                is_valid_otp: bool = False
 
-        if not is_valid_otp:
-            raise AuthError(detail="Invalid OTP or login")
+                if query.otp_secret:
+                    totp = pyotp.TOTP(query.otp_secret)
 
-        print("user", user)
-        return user
+                if totp is not None:
+                    is_valid_otp = totp.verify(otp)
+
+                if not is_valid_otp:
+                    raise AuthError(detail="Invalid OTP or login")
+
+                print("otp", is_valid_otp)
+                query.is_2fa_setup = True
+                query.is_otp_verified = True
+
+                try:
+                    session.commit()
+
+                    session.refresh(query)
+                except IntegrityError as e:
+                    raise DuplicatedError(detail=str(e.orig))
+                
+                return query
+            
+            return query
 
     def disable_2fa(self, user_id: UUID):
         """"""
@@ -163,7 +185,7 @@ class UserRepository(BaseRepository):
 
             return self.get_by_id(str(user.id))
 
-    def enable_2fa(self, user_id: UUID):
+    def setup_2fa(self, user_id: UUID):
         """"""
         with self.session_factory() as session:
             user = session.get(self.model, user_id)
@@ -174,19 +196,28 @@ class UserRepository(BaseRepository):
             if user.id != user_id:
                 raise AuthError(detail="Invalid user")
 
-            otp_base32 = pyotp.random_base32()
-
-            otp_auth_url = pyotp.totp.TOTP(otp_base32).provisioning_uri(
-                name=str(user.email), issuer_name="2fa.com")
-
-            user.is_2fa_enabled = True
-            user.otp_auth_url = otp_auth_url
-            user.otp_secret = otp_base32
-            user.auth_2fa_type = AuthType.Authenticator
+            user.is_2fa_setup = True
 
             try:
                 session.commit()
+
+                session.refresh(user)
             except:
                 raise RequestError(detail="An error has occured")
 
             return self.get_by_id(str(user.id))
+
+    def otp_is_verified(self, user_id: str):
+        with self.session_factory() as session:
+            query = session.query(self.model).filter(
+                cast(self.model.id, Uuid) == cast(user_id, Uuid)).first()
+
+            if query is not None:
+                query.is_2fa_setup = True
+
+                try:
+                    session.commit()
+                except IntegrityError as e:
+                    raise DuplicatedError(detail=str(e.orig))
+
+            return query

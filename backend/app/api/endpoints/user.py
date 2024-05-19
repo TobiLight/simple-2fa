@@ -10,6 +10,7 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.services.user_service import UserService
+from app.schema.user_schema import UserOTPPayload
 
 
 router = APIRouter(
@@ -45,16 +46,17 @@ def disable_2fa(
     return user
 
 
-@router.post("/otp/enable",
-             summary="Enable user 2fa",
+@router.post("/otp/verify",
+             summary="Setup and verify user 2fa",
              response_model=User,
              )
 @inject
-def enable_2fa(
+def verify_2fa(
+    otp_info: UserOTPPayload,
     service: UserService = Depends(Provide[Container.user_service]),
     current_user: User = Depends(get_current_user)
 ):
     """"""
-    user = service.enable_user_2fa(current_user.id)
+    user = service.verify_user_otp(otp_info.otp, str(current_user.id))
 
     return user

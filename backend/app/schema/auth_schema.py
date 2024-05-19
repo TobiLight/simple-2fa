@@ -32,7 +32,7 @@ class SignUp(BaseModel):
     first_name: str
     last_name: str
     phone_no: str
-    enable_2fa: Optional[bool]
+    enable_2fa: Optional[bool] = Field(default=None)
     authentication_type: Optional[str] = Field(default=None)
 
     # validator for email field
@@ -78,13 +78,14 @@ class Payload(BaseModel):
     name: str
 
 
-class SignInResponse(BaseModel):
-    # access_token: str
-    # expiration: datetime
-    # user_info: User
-
+class SignInResponse2Fa(BaseModel):
     is_2fa_enabled: bool
     auth_2fa_type: Optional[str]
+
+class SignInResponse(BaseModel):
+    access_token: str
+    expiration: datetime
+    user_info: User
 
 class OTPResponse(BaseModel):
     access_token: str

@@ -3,10 +3,11 @@
 """Auth endpoint"""
 
 
+from typing import Union
 from fastapi import APIRouter, Depends, status
 from dependency_injector.wiring import inject, Provide
 from app.core.container import Container
-from app.schema.auth_schema import OTPPayload, SignIn, SignInResponse, SignUp
+from app.schema.auth_schema import OTPPayload, OTPResponse, SignIn, SignInResponse, SignInResponse2Fa, SignUp
 from app.schema.user_schema import User
 from app.services.auth_service import AuthService
 
@@ -33,7 +34,7 @@ def sign_up(
 
 @router.post("/login",
              summary="Login",
-             response_model=SignInResponse)
+             response_model=Union[SignInResponse, SignInResponse2Fa])
 @inject
 def login(
 	user_info: SignIn,
@@ -47,7 +48,7 @@ def login(
 
 @router.post("/otp/verify",
              summary="Verify OTP",
-             response_model=SignInResponse
+             response_model=OTPResponse
              )
 @inject
 def verify_otp(

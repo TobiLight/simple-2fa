@@ -55,3 +55,4 @@ def check_password_strength(password: str):
     # }
 
     return strength_score - 1 >= 3
+

@@ -22,5 +22,9 @@ class UserService(BaseService):
     def disable_user_2fa(self, user_id: UUID):
         return self.user_repository.disable_2fa(user_id)
 
-    def enable_user_2fa(self, user_id: UUID):
-        return self.user_repository.enable_2fa(user_id)
+    def setup_user_2fa(self, user_id: UUID):
+        return self.user_repository.setup_2fa(user_id)
+    
+    def verify_user_otp(self, otp: str, user_id: str):
+        """"""
+        return self.user_repository.verify_otp_user(otp, user_id)

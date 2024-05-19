@@ -38,6 +38,8 @@ def upgrade():
                     sa.Column('phone_no', sa.String(length=24), nullable=True),
                     sa.Column('is_active', sa.Boolean(), nullable=True),
                     sa.Column('is_2fa_enabled', sa.Boolean(), nullable=True),
+                    sa.Column('is_2fa_setup', sa.Boolean(), nullable=True),
+                    sa.Column('is_otp_verified', sa.Boolean(), nullable=True),
                     sa.Column('auth_2fa_type', AuthTypeEnum, nullable=True),
                     sa.Column('otp_secret', sa.String(), nullable=True),
                     sa.Column('otp_auth_url', sa.String(), nullable=True),
