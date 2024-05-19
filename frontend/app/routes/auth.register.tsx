@@ -77,7 +77,7 @@ function checkPasswordStrength(password: string) {
 
 export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
   let errors: AuthActionResult = {
-    detail: "Field validation error",
+    detail: "",
     data: {
       // success: undefined,
       errors: [],
@@ -113,51 +113,75 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
       },
     };
 
-  if (!lastName || !lastName.length)
+  if (!lastName || !lastName.length) {
+    errors.detail = "Field validation error";
     errors.data.errors.push({
       field: "last_name",
       message: "Last name is required!",
     });
+  }
 
-  if (!email.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/))
+  if (!email.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/)) {
+    errors.detail = "Field validation error";
     errors.data.errors.push({
       field: "email",
       message: "Invalid email address",
     });
+  }
 
-  if (password.length < 7)
+  if (password.length < 7) {
+    errors.detail = "Field validation error";
+
     errors.data.errors.push({
       field: "password",
       message: "Password is too short!",
     });
-  else if (password.length > 10)
+  } else if (password.length > 10) {
+    errors.detail = "Field validation error";
+
     errors.data.errors.push({
       field: "password",
       message: "Password must be 7 to 10 characters long",
     });
-  else if (!checkPasswordStrength(password))
+  } else if (!checkPasswordStrength(password)) {
+    errors.detail = "Field validation error";
+
     errors.data.errors.push({
       field: "password",
       message: "Password is too weak!",
     });
+  }
 
-  if (!phone_no.match("[0-9]+"))
+  if (!phone_no.match(/^\d+$/)) {
+    errors.detail = "Field validation error";
+
     errors.data.errors.push({
       field: "phone_no",
       message: "Phone number is invalid!",
     });
 
-  if (!phone_no.match("^234"))
+    return json({ ...errors }, { status: 400 });
+  }
+
+  if (!phone_no.match(/^234/)) {
+    errors.detail = "Field validation error";
+
     errors.data.errors.push({
       field: "phone_no",
       message: "Phone number must start with 234",
     });
 
-  if (phone_no.length > 13 || phone_no.length < 13)
+    return json({ ...errors }, { status: 400 });
+  }
+
+  if (phone_no.length > 13 || phone_no.length < 13) {
+    errors.detail = "Field validation error";
+
     errors.data.errors.push({
       field: "phone_no",
       message: "Phone number is invalid!",
     });
+  }
 
   if (errors.data.errors.length > 0)
     return json({ ...errors }, { status: 400 });
@@ -171,8 +195,8 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
         email: email,
         password: password,
         phone_no: phone_no,
-        enable_2fa: enable2fa.toLocaleLowerCase() === "yes" ? true : false,
-        authentication_type: authenticationType,
+        // enable_2fa: enable2fa.toLocaleLowerCase() === "yes" ? true : false,
+        // authentication_type: authenticationType,
       }),
       headers: {
         Accept: "application/json",
@@ -209,7 +233,7 @@ export default function Register() {
 
   const formRef = useRef(null);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const [formError, setFormError] = useState<{
     [x: string]: string | null | undefined;
@@ -275,12 +299,11 @@ export default function Register() {
         transition: Bounce,
       });
 
-      if (formRef.current !== null) {
-        formRef.current.reset()
-        setTimeout(() => {
-          navigate('/auth/login')
-        }, 3500)
-      }
+      if (formRef.current !== null) formRef.current.reset();
+
+      setTimeout(() => {
+        navigate("/auth/login");
+      }, 3100);
     }
   }, [dt && dt.data && dt.data.success]);
 
@@ -294,9 +317,11 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-gray-100">
+    <div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-purple-500">
       <ToastContainer />
-      <h1 className="text-center font-semibold text-4xl pb-12">Register</h1>
+      <h1 className="text-center font-semibold text-4xl pb-12 text-yellow-300">
+        Register
+      </h1>
       <Form
         ref={formRef}
         method="post"
@@ -377,34 +402,6 @@ export default function Register() {
               <p className="text-red-500 text-sm">{formError.phone_no}</p>
             )}
           </label>
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <label htmlFor="enable_2fa" className="grid">
-              Enable 2FA
-              <select
-                name="enable_2fa"
-                id="enable-2fa"
-                className="p-2 border w-[content] focus:outline-purple-500"
-              >
-                <option value="">Choose an option</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </label>
-            <label htmlFor="authentication_type" className="grid">
-              2FA Authentication Type
-              <select
-                name="authentication_type"
-                id="authentication-type"
-                className="p-2 border w-[content] focus:outline-purple-500"
-              >
-                <option value="Google-Authenticator">
-                  Google Authenticator
-                </option>
-                <option value="SMS">SMS</option>
-              </select>
-            </label>
-          </div>
-
           <button
             type="submit"
             className="btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-8"
