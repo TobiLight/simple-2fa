@@ -40,6 +40,10 @@ class UserOTPPayload(BaseModel):
     # email: str
     otp: str
 
+
+class User2FaUpdate(BaseModel):
+    authentication_type: str
+
 class UserOTPResponse(BaseModel):
     otp_verified: bool
 

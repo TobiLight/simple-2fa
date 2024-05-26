@@ -10,6 +10,7 @@ from app.core.container import Container
 from app.schema.auth_schema import OTPPayload, OTPResponse, SignIn, SignInResponse, SignInResponse2Fa, SignUp
 from app.schema.user_schema import User
 from app.services.auth_service import AuthService
+from app.core.dependencies import get_current_user
 
 
 router = APIRouter(
@@ -48,7 +49,7 @@ def login(
 
 @router.post("/otp/verify",
              summary="Verify OTP",
-             response_model=OTPResponse
+             response_model=Union[User, None]
              )
 @inject
 def verify_otp(
@@ -57,3 +58,14 @@ def verify_otp(
 ):
     """"""
     return service.otp_verification(payload)
+
+
+@router.post("/logout",
+             summary="Log a user out")
+@inject
+def logout(
+    service: AuthService = Depends(Provide[Container.auth_service]),
+    current_user: User = Depends(get_current_user)
+):
+    """"""
+    return service.logout(str(current_user.id))

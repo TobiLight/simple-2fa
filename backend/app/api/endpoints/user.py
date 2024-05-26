@@ -10,11 +10,11 @@ from app.core.container import Container
 from app.core.dependencies import get_current_user
 from app.model.user import User
 from app.services.user_service import UserService
-from app.schema.user_schema import UserOTPPayload
+from app.schema.user_schema import User2FaUpdate, UserOTPPayload
 
 
 router = APIRouter(
-	prefix="/user",
+    prefix="/user",
     tags=["User"],
     dependencies=[Depends(get_current_user)]
 )
@@ -58,5 +58,20 @@ def verify_2fa(
 ):
     """"""
     user = service.verify_user_otp(otp_info.otp, str(current_user.id))
+
+    return user
+
+
+@router.post("/2fa/update", summary="Updare 2fa type to sms or authenticator")
+@inject
+def update_2fa(
+    user_2fa_info: User2FaUpdate,
+    service: UserService = Depends(Provide[Container.user_service]),
+    current_user: User = Depends(get_current_user)
+):
+    """"""
+
+    user = service.update_user_2fa(
+        user_2fa_info.authentication_type, str(current_user.id))
 
     return user

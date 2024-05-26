@@ -25,11 +25,15 @@ def get_current_user(
 ) -> User:
     try:
         payload = jwt.decode(token, configs.SECRET_KEY, algorithms=ALGORITHM)
+    
         token_data = Payload(**payload)
     except (JWTError, ValidationError):
         raise AuthError(detail="Could not validate credentials")
+    
     current_user: User = service.get_by_id(token_data.id)
+    
     if not current_user:
         raise AuthError(detail="User not found")
+    
     return current_user
 

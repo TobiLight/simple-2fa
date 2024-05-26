@@ -71,26 +71,9 @@ class AuthService(BaseService):
         return SignInResponse(**sign_in_result)
 
     def otp_verification(self, payload: OTPPayload):
-        # user = self.user_repository.verify_otp(payload)
+        user = self.user_repository.verify_otp(payload)
 
-        # token_payload = Payload(
-        #     id=str(user.id),
-        #     email=user.email,
-        #     name=user.first_name + " " + user.last_name,
-        # )
-
-        # token_lifespan = timedelta(
-        #     minutes=configs.ACCESS_TOKEN_EXPIRE_MINUTES)
-
-        # access_token, expiration_datetime = create_access_token(
-        #     token_payload.model_dump(), token_lifespan)
-            
-        # sign_in_result = {
-        #     "access_token": access_token,
-        #     "expiration": expiration_datetime,
-        #     "user_info": user,
-        # }
-
-        # return OTPResponse(**sign_in_result)
-
-        return None
+        return user
+    
+    def logout(self, user_id: str):
+        return self.user_repository.logout(user_id)

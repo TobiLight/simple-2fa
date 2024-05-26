@@ -28,3 +28,7 @@ class UserService(BaseService):
     def verify_user_otp(self, otp: str, user_id: str):
         """"""
         return self.user_repository.verify_otp_user(otp, user_id)
+    
+    def update_user_2fa(self, authentication_type: str, user_id: str):
+        """"""
+        return self.user_repository.update_2fa_user(authentication_type, user_id)

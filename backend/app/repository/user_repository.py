@@ -81,13 +81,18 @@ class UserRepository(BaseRepository):
             if user:
                 raise DuplicatedError(detail="Account exists!")
 
+            auth_type = AuthType.Sms if schema.authentication_type is not None and schema.authentication_type.lower(
+            ) == 'sms' else AuthType.Authenticator
+
+            print(auth_type, schema.authentication_type.lower())
+
             query = self.model(
                 id=uuid4(),
                 **schema.model_dump(),
                 otp_secret=otp_base32,
                 otp_auth_url=otp_auth_url,
                 is_2fa_enabled=True,
-                auth_2fa_type=AuthType.Authenticator)
+                auth_2fa_type=auth_type)
 
             try:
                 session.add(query)
@@ -109,18 +114,56 @@ class UserRepository(BaseRepository):
 
         return query.is_2fa_enabled
 
+    def verify_otp(self, payload: OTPPayload):
+        """"""
+        with self.session_factory() as session:
+            query = session.query(self.model).filter(
+                cast(self.model.email, String) == cast(payload.email, String)).first()
+
+            if query is not None:
+                totp: Optional[pyotp.TOTP] = None
+
+                is_valid_otp: bool = False
+
+                if query.otp_secret:
+                    totp = pyotp.TOTP(query.otp_secret)
+
+                if totp is not None:
+                    is_valid_otp = totp.verify(payload.otp)
+
+                if not is_valid_otp:
+                    raise AuthError(detail="Invalid OTP or login")
+
+                query.is_otp_verified = True
+
+                try:
+                    session.commit()
+
+                    session.refresh(query)
+                except IntegrityError as e:
+                    raise DuplicatedError(detail=str(e.orig))
+
+                return query
+
+            return query
+
     def verify_otp_user(self, otp: str, user_id: str) -> Optional[User]:
         """"""
-        # with self.session_factory() as session:
-
-        # user = self.get_by_id(user_id)
-
-        # if user is None:
-        #     raise AuthError(detail="Invalid OTP or login!")
-
-
         with self.session_factory() as session:
             query = session.get(self.model, user_id)
+
+            if query is not None and query.auth_2fa_type and query.auth_2fa_type.lower() == 'sms':
+                query.is_2fa_setup = True
+                query.is_otp_verified = False
+
+                try:
+                    session.commit()
+
+                    session.refresh(query)
+                except IntegrityError as e:
+                    raise DuplicatedError(detail=str(e.orig))
+
+                return query
 
             if query is not None:
                 totp: Optional[pyotp.TOTP] = None
@@ -136,7 +179,6 @@ class UserRepository(BaseRepository):
                 if not is_valid_otp:
                     raise AuthError(detail="Invalid OTP or login")
 
-                print("otp", is_valid_otp)
                 query.is_2fa_setup = True
                 query.is_otp_verified = True
 
@@ -146,9 +188,9 @@ class UserRepository(BaseRepository):
                     session.refresh(query)
                 except IntegrityError as e:
                     raise DuplicatedError(detail=str(e.orig))
-                
+
                 return query
-            
+
             return query
 
     def disable_2fa(self, user_id: UUID):
@@ -221,3 +263,41 @@ class UserRepository(BaseRepository):
                     raise DuplicatedError(detail=str(e.orig))
 
             return query
+
+    def update_2fa_user(self, authentication_type: str, user_id: str):
+        """"""
+        with self.session_factory() as session:
+            query = session.get(self.model, user_id)
+
+            if query:
+                if authentication_type == 'SMS':
+                    query.auth_2fa_type = AuthType.Sms
+                else:
+                    query.auth_2fa_type = AuthType.Authenticator
+                try:
+                    session.commit()
+
+                    session.refresh(query)
+                except IntegrityError as e:
+                    raise DuplicatedError(detail=str(e.orig))
+
+            return query
+
+    def logout(self, user_id: str):
+        """"""
+        with self.session_factory() as session:
+            query = session.get(self.model, user_id)
+
+            if query:
+                query.is_otp_verified = False
+
+                try:
+                    session.commit()
+
+                    session.refresh(query)
+                except IntegrityError as e:
+                    raise DuplicatedError(detail=str(e.orig))
+
+                return True
+
+            return False

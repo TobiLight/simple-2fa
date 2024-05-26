@@ -103,5 +103,5 @@ class User2fa(BaseModel):
 
 class OTPPayload(BaseModel):
     email: str
-    password: str
+    # password: str
     otp: str
