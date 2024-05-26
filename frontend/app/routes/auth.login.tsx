@@ -1,15 +1,22 @@
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import {
+  ActionFunctionArgs,
+  json,
+  LoaderFunction,
+  LoaderFunctionArgs,
+  redirect,
+} from "@remix-run/node";
 import { Form, Link, Navigate, useActionData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 import OTPForm from "~/components/OTPForm";
-import { createUserSession } from "~/session.server";
+import { createUserSession, getUserSession } from "~/session.server";
 
 type ActionResult = {
   detail: string;
   data: {
     success?: {
       is_2fa_enabled: Boolean;
+      is_2fa_setup: Boolean;
       auth_2fa_type: string;
     };
     errors: Array<{
@@ -17,6 +24,16 @@ type ActionResult = {
       message: string;
     }>;
   };
+};
+
+export const loader: LoaderFunction = async ({
+  request,
+}: LoaderFunctionArgs) => {
+  let session = await getUserSession(request);
+
+  if (session.has("user")) return redirect("/dashboard");
+
+  return null;
 };
 
 export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
@@ -64,11 +81,18 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
 
     if (formRequest.status !== 200 && formRequest.status !== 201) {
       let error = (await formRequest.json()) as ActionResult;
-      
+
       throw error;
     }
 
     const response = await formRequest.json();
+
+    if (response.user_info.is_2fa_setup)
+      return await createUserSession({
+        redirectTo: "/otp/verification",
+        userId: response.user_info.id,
+        accessToken: response.access_token,
+      });
 
     const data: ActionResult = {
       detail: "Login successful!",
@@ -158,6 +182,7 @@ export default function Login() {
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
+    
     setFormError((prevError) => ({
       ...prevError,
       [name]: value === "" ? undefined : null,

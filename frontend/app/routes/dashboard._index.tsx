@@ -24,11 +24,13 @@ type UserType = {
   phone_no: string;
   is_2fa_enabled: boolean;
   is_2fa_setup: boolean;
+  is_otp_verified: boolean;
   otp_secret: string;
   otp_auth_url: string;
+  auth_2fa_type: string;
 };
 
-export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const accessToken = await getAccessToken(request);
 
   if (!accessToken) return redirect("/login");
@@ -37,7 +39,9 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
 
   const otp = form.get("otp") as string;
 
-  console.log("otp", otp);
+  const authenticationType = form.get("auth_type") as string;
+
+  console.log("otp", otp, authenticationType);
 
   if (!otp.length || otp.length < 6)
     return json({ detail: "Invalid OTP" }, { status: 400 });
@@ -57,8 +61,6 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
 
     const resp = await req.json();
 
-    console.log("resp", resp);
-
     return json({ ...resp }, { status: 200 });
   } catch (err: any) {
     console.log(err);
@@ -72,56 +74,38 @@ export default function Dashboard() {
 
   const [displayOTPForm, setDisplayOTPForm] = useState<boolean>(false);
 
-  const otpFetcher = useFetcher<{ detail?: string; is_2fa_setup?: boolean }>({
+  const otpFetcher = useFetcher<{
+    detail?: string;
+    is_2fa_setup?: boolean;
+    is_2fa_enabled: boolean;
+  }>({
     key: "otp-verification-form",
   });
 
-  const [otpVerified, setOTPVerified] = useState<boolean>(false);
-
   useEffect(() => {
-    console.log("loaderData", loaderData, otpFetcher.data);
     if (otpFetcher.data && otpFetcher.data.is_2fa_setup) {
-      setOTPVerified(true);
+      toast.success("2FA setup complete", {
+        autoClose: 2000,
+        transition: Bounce,
+      });
     }
     return;
   }, [otpFetcher.state === "idle"]);
 
   useEffect(() => {
-    if (otpVerified)
+    if (actionData && actionData.is_2fa_setup && actionData.is_otp_verified)
       toast.success("2FA setup complete!", {
         autoClose: 2000,
-        transition: Bounce
+        transition: Bounce,
       });
-  }, [otpVerified]);
+  }, [actionData]);
 
   return (
     <div className="pt-20 min-h-[inerit] bg-purple-500">
       <ToastContainer />
-      {/* <div className="bg-white w-11/12 mx-auto rounded-md p-8">
-        <div className="flex flex-col gap-10 sm:gap-0 sm:flex-row">
-          <div className="grid gap-8 w-full">
-            <h1 className="text-xl font-bold">Profile Page</h1>
-            <div className="grid gap-4">
-              <p>ID: 1234567890</p>
-              <p>Email: John Doe</p>
-              <p>Name: John Doe</p>
-              <p>Authentication type: Google Authenticator</p>
-            </div>
-          </div>
 
-          <div className="authentication w-full">
-            <h1 className="text-xl font-bold">App Authentication (2FA)</h1>
-            <div className="grid gap-3">
-              <p>Secure your account with TOTP two-factor authentication.</p>
-              <button className="p-4 text-white bg-purple-500 rounded-md w-[content]">
-                Disable 2FA
-              </button>
-            </div>
-          </div>
-        </div>
-      </div> */}
       <section className="bg-ct-blue-600  min-h-screen pt-10 w-11/12 mx-auto sm:w-5/6">
-        <div className="max-w-4xl p-12 mx-auto bg-white rounded-md h-[20rem] flex gap-20 justify-center items-start">
+        <div className="max-w-4xl p-12 mx-auto bg-white rounded-md h-auto flex gap-20 justify-center items-start">
           <div className="flex-grow-2">
             <h1 className="text-2xl font-semibold">Profile Page</h1>
             <div className="mt-8">
@@ -150,11 +134,19 @@ export default function Dashboard() {
                   {loaderData.is_2fa_setup ? "Yes" : "No"}
                 </span>
               </p>
+              <p className="mb-4">
+                Authentication type:{" "}
+                <span className="flex items-center gap-2">
+                 {loaderData.auth_2fa_type}
+                </span>
+              </p>
             </div>
           </div>
           <div>
             <h3 className="text-2xl font-semibold">
-              Mobile App Authentication (2FA)
+              {loaderData.auth_2fa_type === "SMS"
+                ? "SMS Authentication (2FA)"
+                : "Mobile App Authentication (2FA)"}
             </h3>
             <p className="mb-4">
               Secure your account with TOTP two-factor authentication.
@@ -183,6 +175,8 @@ export default function Dashboard() {
       {displayOTPForm && (
         <section className="fixed bg-[#0007] top-0 w-full h-full flex justify-center items-center">
           <OTPVerification
+            authenticationType={loaderData.auth_2fa_type.toLowerCase()}
+            phone_no={loaderData.phone_no}
             otp_auth_url={loaderData.otp_auth_url}
             otp_secret={loaderData.otp_secret}
             hideOTPForm={() => setDisplayOTPForm(false)}

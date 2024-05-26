@@ -196,7 +196,7 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
         password: password,
         phone_no: phone_no,
         // enable_2fa: enable2fa.toLocaleLowerCase() === "yes" ? true : false,
-        // authentication_type: authenticationType,
+        authentication_type: authenticationType,
       }),
       headers: {
         Accept: "application/json",
@@ -325,7 +325,7 @@ export default function Register() {
       <Form
         ref={formRef}
         method="post"
-        className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/4 rounded-md p-4 bg-white shadow-lg grid gap-6"
+        className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/4 rounded-md px-8 py-16 bg-white shadow-lg grid gap-6"
       >
         <div className="grid gap-4">
           <div className="grid sm:grid-cols-2 gap-8 items-center">
@@ -401,6 +401,13 @@ export default function Register() {
             {formError && (
               <p className="text-red-500 text-sm">{formError.phone_no}</p>
             )}
+          </label>
+          <label htmlFor="authentication_type" className="grid">
+            <span>2FA Authentication Type</span>
+            <select name="authentication_type" id="" className="w-fit bg-gray-200 p-2 rounded-md">
+              <option value="SMS">SMS</option>``
+              <option value="Google-Authenticator">Google Authenticator</option>
+            </select>
           </label>
           <button
             type="submit"

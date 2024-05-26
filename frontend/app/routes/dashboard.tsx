@@ -1,26 +1,94 @@
-import { ActionFunction, ActionFunctionArgs, json, LoaderFunction, LoaderFunctionArgs, redirect } from "@remix-run/node"
-import { Link, Outlet, useLoaderData } from "@remix-run/react"
-import { getUser, requireUserSession} from "~/session.server"
+import {
+  ActionFunction,
+  ActionFunctionArgs,
+  json,
+  LoaderFunction,
+  LoaderFunctionArgs,
+  redirect,
+} from "@remix-run/node";
+import { Form, Link, Outlet, useLoaderData } from "@remix-run/react";
+import {
+  destroySession,
+  destroyUserSession,
+  getAccessToken,
+  getUser,
+  getUserSession,
+  requireUserSession,
+} from "~/session.server";
 
-export const loader: LoaderFunction = async ({request}: LoaderFunctionArgs) => {
-	const user = await getUser(request)
+export const loader: LoaderFunction = async ({
+  request,
+}: LoaderFunctionArgs) => {
+  const user = await getUser(request);
 
-	if (!user)
-		return redirect("/auth/login")
+  if (!user)
+    return redirect("/auth/login", {
+      headers: {
+        "Set-Cookie": await destroySession(await getUserSession(request)),
+      },
+      status: 301,
+    });
 
-	return json({...user}, {status: 200})
-}
+  return json({ ...user }, { status: 200 });
+};
+
+export const action: ActionFunction = async ({
+  request,
+}: ActionFunctionArgs) => {
+  const session = await getUserSession(request);
+  const accessToken = await getAccessToken(request);
+
+  if (!accessToken)
+    return redirect("/auth/login", {
+      headers: {
+        "Set-Cookie": await destroySession(session),
+      },
+      status: 301,
+    });
+
+  try {
+    const req = await fetch("http://127.0.0.1:8000/auth/logout", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const resp = await req.json();
+
+    if (resp)
+      return redirect("/auth/login", {
+        headers: {
+          "Set-Cookie": await destroySession(session),
+        },
+        status: 301,
+      });
+  } catch (err: any) {
+    console.log("err", err);
+  }
+
+  return redirect("/auth/login", {
+    headers: {
+      "Set-Cookie": await destroySession(session),
+    },
+    status: 301,
+  });
+};
 
 function DashboardLayout() {
-	return (
-		<main className='min-h-screen h-full'>
-			<header className="p-4 flex items-center justify-end gap-8 font-semibold border-b shadow">
-				<Link to="/">Home</Link>
-				<Link to="/auth/login" className="">Logout</Link>
-			</header>
-			<Outlet />
-		</main>
-	)
+  return (
+    <>
+      <header className="p-4 flex items-center justify-end gap-8 font-semibold border-b shadow">
+        <Link to="/">Home</Link>
+        <Form method="post">
+          <button>Logout</button>
+        </Form>
+      </header>
+      <main className="min-h-screen h-full">
+        <Outlet />
+      </main>
+    </>
+  );
 }
 
-export default DashboardLayout
+export default DashboardLayout;
