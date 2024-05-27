@@ -74,6 +74,8 @@ async def validation_exception_handler(_, exc):
 
 db = app_creator.db
 
+print(db._engine)
+
 print("✅ Up and running...")
 
 container = app_creator.container
