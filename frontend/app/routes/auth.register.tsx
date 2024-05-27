@@ -187,7 +187,11 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
     return json({ ...errors }, { status: 400 });
 
   try {
-    const formRequest = await fetch("http://localhost:8000/auth/register", {
+    const formRequest = await fetch(`${
+      process.env.NODE_ENV === "development"
+        ? process.env.DEV_URL
+        : process.env.LIVE_URL
+    }/auth/register`, {
       method: "POST",
       body: JSON.stringify({
         first_name: firstName,

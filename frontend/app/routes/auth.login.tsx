@@ -67,17 +67,24 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
     return json({ ...errors }, { status: 400 });
 
   try {
-    const formRequest = await fetch("http://localhost:8000/auth/login", {
-      method: "POST",
-      body: JSON.stringify({
-        email: email,
-        password: password,
-      }),
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
+    const formRequest = await fetch(
+      `${
+        process.env.NODE_ENV === "development"
+          ? process.env.DEV_URL
+          : process.env.LIVE_URL
+      }/auth/login`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (formRequest.status !== 200 && formRequest.status !== 201) {
       let error = (await formRequest.json()) as ActionResult;
@@ -182,7 +189,7 @@ export default function Login() {
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    
+
     setFormError((prevError) => ({
       ...prevError,
       [name]: value === "" ? undefined : null,

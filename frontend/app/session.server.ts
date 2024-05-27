@@ -99,7 +99,11 @@ export async function getUser(request: Request): Promise<any | undefined> {
 
   if (!userId) return undefined;
 
-  let data = await fetch("http://localhost:8000/user", {
+  let data = await fetch(`${
+    process.env.NODE_ENV === "development"
+      ? process.env.DEV_URL
+      : process.env.LIVE_URL
+  }/user`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

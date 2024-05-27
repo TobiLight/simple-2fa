@@ -61,7 +61,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   try {
-    const req = await fetch("http://127.0.0.1:8000/auth/otp/verify", {
+    const req = await fetch(`${
+      process.env.NODE_ENV === "development"
+        ? process.env.DEV_URL
+        : process.env.LIVE_URL
+    }/auth/otp/verify`, {
       method: "POST",
       body: JSON.stringify({
         otp: otp,

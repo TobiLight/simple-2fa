@@ -23,7 +23,11 @@ export const action: ActionFunction = async ({
   console.log("oiuhygfdcvbnjuhyg");
 
   try {
-    const req = await fetch("http://127.0.0.1:8000/auth/logout", {
+    const req = await fetch(`${
+      process.env.NODE_ENV === "development"
+        ? process.env.DEV_URL
+        : process.env.LIVE_URL
+    }/auth/logout`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,

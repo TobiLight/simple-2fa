@@ -47,17 +47,24 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ detail: "Invalid OTP" }, { status: 400 });
 
   try {
-    const req = await fetch("http://localhost:8000/user/otp/verify", {
-      method: "POST",
-      body: JSON.stringify({
-        otp,
-      }),
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const req = await fetch(
+      `${
+        process.env.NODE_ENV === "development"
+          ? process.env.DEV_URL
+          : process.env.LIVE_URL
+      }/user/otp/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          otp,
+        }),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     const resp = await req.json();
 
@@ -137,7 +144,7 @@ export default function Dashboard() {
               <p className="mb-4">
                 Authentication type:{" "}
                 <span className="flex items-center gap-2">
-                 {loaderData.auth_2fa_type}
+                  {loaderData.auth_2fa_type}
                 </span>
               </p>
             </div>
