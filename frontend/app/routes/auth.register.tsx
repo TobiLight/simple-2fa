@@ -336,6 +336,7 @@ export default function Register() {
       </h1>
       <Form
         ref={formRef}
+        onSubmit={e => setIsLoading(true)}
         method="post"
         className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/4 rounded-md px-8 py-16 bg-white shadow-lg grid gap-6"
       >
@@ -428,7 +429,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={isLoading}
-            onClick={(e) => setIsLoading(true)}
+            // onClick={(e) => setIsLoading(true)}
             className={`${
               isLoading ? "opacity-50" : ""
             } btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-8`}
