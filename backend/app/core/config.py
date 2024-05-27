@@ -20,7 +20,7 @@ class Configs(BaseSettings):
     ENV_DATABASE_MAPPER: dict = {
         "prod": "postgresql_2ocd",
         "stage": "2fa_stage",
-        "dev": "2fa_dev",
+        "dev": "postgresql_2ocd",
         "test": "2fa_test",
     }
     DB_ENGINE_MAPPER: dict = {
