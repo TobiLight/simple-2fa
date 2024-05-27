@@ -206,6 +206,7 @@ export default function Login() {
         </h1>
         <Form
           method="POST"
+          onSubmit={e => setIsLoading(true)}
           className="w-10/12 mx-auto sm:w-3/4 md:w-2/4 lg:w-2/5 rounded-md p-4 bg-white shadow-lg grid gap-6"
         >
           <input type="hidden" name="form_type" value="login" />
