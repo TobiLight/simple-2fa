@@ -187,26 +187,29 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
     return json({ ...errors }, { status: 400 });
 
   try {
-    const formRequest = await fetch(`${
-      process.env.NODE_ENV === "development"
-        ? process.env.DEV_URL
-        : process.env.LIVE_URL
-    }/auth/register`, {
-      method: "POST",
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        password: password,
-        phone_no: phone_no,
-        // enable_2fa: enable2fa.toLocaleLowerCase() === "yes" ? true : false,
-        authentication_type: authenticationType,
-      }),
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
+    const formRequest = await fetch(
+      `${
+        process.env.NODE_ENV === "development"
+          ? process.env.DEV_URL
+          : process.env.LIVE_URL
+      }/auth/register`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          password: password,
+          phone_no: phone_no,
+          // enable_2fa: enable2fa.toLocaleLowerCase() === "yes" ? true : false,
+          authentication_type: authenticationType,
+        }),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (formRequest.status !== 200 && formRequest.status !== 201) {
       let error = (await formRequest.json()) as AuthActionResult;
@@ -243,7 +246,10 @@ export default function Register() {
     [x: string]: string | null | undefined;
   }>();
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
   useEffect(() => {
+    setIsLoading(false);
     if (dt && dt.data && dt.data.errors) {
       for (let { field, message } of dt.data.errors) {
         setFormError((prev) => ({
@@ -272,6 +278,7 @@ export default function Register() {
   }, [dt]);
 
   useEffect(() => {
+    setIsLoading(false);
     if (dt && !dt.data) {
       toast.error(dt.detail, {
         position: "top-right",
@@ -289,6 +296,7 @@ export default function Register() {
   }, [dt]);
 
   useEffect(() => {
+    setIsLoading(false);
     if (dt && dt.data && dt.data.success) {
       // create toast notification here
       toast.success(dt.detail, {
@@ -408,16 +416,24 @@ export default function Register() {
           </label>
           <label htmlFor="authentication_type" className="grid">
             <span>2FA Authentication Type</span>
-            <select name="authentication_type" id="" className="w-fit bg-gray-200 p-2 rounded-md">
+            <select
+              name="authentication_type"
+              id=""
+              className="w-fit bg-gray-200 p-2 rounded-md"
+            >
               <option value="SMS">SMS</option>``
               <option value="Google-Authenticator">Google Authenticator</option>
             </select>
           </label>
           <button
             type="submit"
-            className="btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-8"
+            disabled={isLoading}
+            onClick={(e) => setIsLoading(true)}
+            className={`${
+              isLoading ? "opacity-50" : ""
+            } btn-primary bg-purple-600 hover:bg-purple-700 text-gray-100 p-3 rounded-md mt-8`}
           >
-            Create account
+            {isLoading ? "Please wait..." : "Create account"}
           </button>
         </div>
         <div className="flex items-center gap-1">
