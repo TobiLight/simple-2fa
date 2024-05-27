@@ -18,9 +18,9 @@ class Configs(BaseSettings):
     ENV: str = os.getenv("ENV", "dev")
     PROJECT_NAME: str = "2fa"
     ENV_DATABASE_MAPPER: dict = {
-        "prod": "2fa_prod",
+        "prod": "dpg-cpa7h97109ks73ajdh80-a",
         "stage": "2fa_stage",
-        "dev": "2fa_dev",
+        "dev": "dpg-cpa7h97109ks73ajdh80-a",
         "test": "2fa_test",
     }
     DB_ENGINE_MAPPER: dict = {
