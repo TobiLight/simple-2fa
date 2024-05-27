@@ -41,8 +41,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const authenticationType = form.get("auth_type") as string;
 
-  console.log("otp", otp, authenticationType);
-
   if (!otp.length || otp.length < 6)
     return json({ detail: "Invalid OTP" }, { status: 400 });
 
