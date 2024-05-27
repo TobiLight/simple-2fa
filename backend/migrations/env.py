@@ -109,7 +109,7 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
         context.configure(
-            url=get_url(),
+            # url=get_url(),
             connection=connection,
             target_metadata=target_metadata,
             include_schemas=True,
