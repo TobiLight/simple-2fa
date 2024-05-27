@@ -20,8 +20,6 @@ export const action: ActionFunction = async ({
       status: 301,
     });
 
-  console.log("oiuhygfdcvbnjuhyg");
-
   try {
     const req = await fetch(`${
       process.env.NODE_ENV === "development"
