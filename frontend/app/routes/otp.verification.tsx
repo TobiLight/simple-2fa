@@ -123,7 +123,6 @@ export default function Index() {
 
   useEffect(() => {
     setIsLoading(false)
-    console.log(otpSMSFetcher.data)
   }, [otpSMSFetcher.state === 'idle'])
 
   return (
