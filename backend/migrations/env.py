@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from typing import Dict, Optional
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, engine_from_config, pool
 from sqlmodel import SQLModel
 
 from app.core.config import configs
@@ -24,7 +24,8 @@ if not config.get_main_option("sqlalchemy.url"):
 
 section = config.config_ini_section
 config.set_section_option(section, "DB_USER", os.environ.get("DB_USER", ""))
-config.set_section_option(section, "DB_PASS", os.environ.get("DB_PASSWORD", ""))
+config.set_section_option(
+    section, "DB_PASS", os.environ.get("DB_PASSWORD", ""))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -49,31 +50,43 @@ def include_name(name, type_, parent_names):
     return False
 
 
+def get_url():
+    """Generate a URL from the environment variables.
+    """
+    return "postgresql://%s:%s@%s:%s/%s" % (
+        os.environ["DB_USER"],
+        os.environ["DB_PASSWORD"],
+        os.environ["DB_HOST"],
+        os.environ["DB_PORT"],
+        os.environ["DB"],
+    )
+
+
 # code doesn't reach here
-# def run_migrations_offline():
-# """Run migrations in 'offline' mode.
-#
-# This configures the context with just a URL
-# and not an Engine, though an Engine is acceptable
-# here as well.  By skipping the Engine creation
-# we don't even need a DBAPI to be available.
-#
-# Calls to context.execute() here emit the given string to the
-# script output.
-#
-# """
-# url = config.get_main_option("sqlalchemy.url")
-# context.configure(
-#     url=url,
-#     target_metadata=target_metadata,
-#     literal_binds=True,
-#     include_schemas=True,
-#     dialect_opts={"paramstyle": "named"},
-#     include_name=include_name,
-# )
-#
-# with context.begin_transaction():
-#     context.run_migrations()
+def run_migrations_offline():
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
+    url = get_url()
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        include_schemas=True,
+        dialect_opts={"paramstyle": "named"},
+        include_name=include_name,
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 def run_migrations_online():
@@ -96,6 +109,7 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
         context.configure(
+            url=get_url(),
             connection=connection,
             target_metadata=target_metadata,
             include_schemas=True,
@@ -108,7 +122,7 @@ def run_migrations_online():
 
 
 if context.is_offline_mode():
-    pass
-    # run_migrations_offline()
+    # pass
+    run_migrations_offline()
 else:
     run_migrations_online()
