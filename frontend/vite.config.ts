@@ -9,6 +9,6 @@ installGlobals();
 export default defineConfig({
   plugins: [remix(), netlifyPlugin(), tsconfigPaths()],
   build: {
-    outDir: '../dist'
+    outDir: '../build'
   }
 });
