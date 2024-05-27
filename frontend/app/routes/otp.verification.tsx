@@ -61,21 +61,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   try {
-    const req = await fetch(`${
-      process.env.NODE_ENV === "development"
-        ? process.env.DEV_URL
-        : process.env.LIVE_URL
-    }/auth/otp/verify`, {
-      method: "POST",
-      body: JSON.stringify({
-        otp: otp,
-        email: user.email,
-      }),
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
+    const req = await fetch(
+      `${
+        process.env.NODE_ENV === "development"
+          ? process.env.DEV_URL
+          : process.env.LIVE_URL
+      }/auth/otp/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          otp: otp,
+          email: user.email,
+        }),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (req.status === 200) return redirect("/dashboard");
 
@@ -101,6 +104,8 @@ export default function Index() {
   const loaderData = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
   const [error, setError] = useState<string>();
 
   const otpSMSFetcher = useFetcher<{
@@ -112,8 +117,14 @@ export default function Index() {
   });
 
   useEffect(() => {
+    setIsLoading(false);
     setError(actionData?.detail);
   }, [actionData]);
+
+  useEffect(() => {
+    setIsLoading(false)
+    console.log(otpSMSFetcher.data)
+  }, [otpSMSFetcher.state === 'idle'])
 
   return (
     <div className="min-h-[inherit] flex flex-col items-center justify-center place-content-center w-full">
@@ -129,12 +140,56 @@ export default function Index() {
             <p className="text-sm">
               {loaderData.auth_2fa_type === "Google-Authenticator"
                 ? "Open the two-step verification app on your mobile device to get your verification code."
-                : `An sms was sent to your number ending in ${loaderData.phone_no.slice(-4)}`}
+                : `An sms was sent to your number ending in ${loaderData.phone_no.slice(
+                    -4
+                  )}`}
             </p>
           </div>
           {loaderData.auth_2fa_type.toLowerCase() === "sms" ? (
             <>
-              <otpSMSFetcher.Form method="post" className="grid gap-4">
+              <otpSMSFetcher.Form onSubmit={e => setIsLoading(true)} method="post" className="grid gap-4">
+                {error ? (
+                  <p className="text-red-500 text-lg text-center font-semibold">
+                    {error}
+                  </p>
+                ) : null}
+                <label htmlFor="otp">
+                  <input
+                    onChange={(e) => {
+                      if (
+                        e.currentTarget.value === "" ||
+                        e.currentTarget.value.length > 0
+                      )
+                        setError(undefined);
+                    }}
+                    disabled={isLoading}
+                    type="text"
+                    name="otp"
+                    placeholder="Authentication code"
+                    className="w-full p-3 rounded shadow-inner"
+                  />
+                </label>
+                <button
+                  disabled={isLoading}
+                  onClick={(e) => {
+                    otpSMSFetcher.data = undefined;
+                    otpSMSFetcher.submit({ method: "post" });
+                  }}
+                  className={`${
+                    isLoading ? "opacity-50" : ""
+                  } text-gray-100 bg-black w-full p-3 rounded-md`}
+                >
+                  {isLoading ? "Authenticating..." : "Authenticate"}
+                </button>
+              </otpSMSFetcher.Form>
+            </>
+          ) : (
+            <>
+              <Form
+                method="post"
+                onSubmit={(e) => setIsLoading(true)}
+                className="grid gap-4"
+              >
                 {error ? (
                   <p className="text-red-500 text-lg text-center font-semibold">
                     {error}
@@ -156,41 +211,12 @@ export default function Index() {
                   />
                 </label>
                 <button
-                  onClick={(e) => {
-                    otpSMSFetcher.data = undefined;
-                    otpSMSFetcher.submit({ otp: '123456' }, { method: "post" });
-                  }}
-                  className="text-gray-100 bg-black w-full p-3 rounded-md"
+                  disabled={isLoading}
+                  className={`${
+                    isLoading ? "opacity-50" : ""
+                  } text-gray-100 bg-black w-full p-3 rounded-md`}
                 >
-                  Authenticate sms
-                </button>
-              </otpSMSFetcher.Form>
-            </>
-          ) : (
-            <>
-              <Form method="post" className="grid gap-4">
-                {error ? (
-                  <p className="text-red-500 text-lg text-center font-semibold">
-                    {error}
-                  </p>
-                ) : null}
-                <label htmlFor="otp">
-                  <input
-                    onChange={(e) => {
-                      if (
-                        e.currentTarget.value === "" ||
-                        e.currentTarget.value.length > 0
-                      )
-                        setError(undefined);
-                    }}
-                    type="text"
-                    name="otp"
-                    placeholder="Authentication code"
-                    className="w-full p-3 rounded shadow-inner"
-                  />
-                </label>
-                <button className="text-gray-100 bg-black w-full p-3 rounded-md">
-                  Authenticate
+                  {isLoading ? "Authenticating..." : "Authenticate"}
                 </button>
               </Form>
             </>
