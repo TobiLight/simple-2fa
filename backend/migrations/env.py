@@ -25,7 +25,7 @@ if not config.get_main_option("sqlalchemy.url"):
 section = config.config_ini_section
 config.set_section_option(section, "DB_USER", os.environ.get("DB_USER", ""))
 config.set_section_option(
-    section, "DB_PASS", os.environ.get("DB_PASSWORD", ""))
+    section, "DB_PASSWORD", os.environ.get("DB_PASSWORD", ""))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
