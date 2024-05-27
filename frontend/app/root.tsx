@@ -7,7 +7,7 @@ import {
 } from "@remix-run/react";
 
 import type { LinksFunction } from "@remix-run/node";
-import stylesheet from "~/main.css?url";
+import stylesheet from "app/main.css?url";
 import 'react-toastify/dist/ReactToastify.css';
 
 
