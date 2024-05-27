@@ -5,6 +5,6 @@ export default {
   theme: {
     extend: {},
   },
-  purge: ["./src/components/**/*.{js,jsx}", "./public/index.html"],
+  // purge: ["./src/components/**/*.{js,jsx}", "./public/index.html"],
   plugins: [],
 } satisfies Config;
