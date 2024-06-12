@@ -1,7 +1,7 @@
-import { Form, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
-import { Bounce, toast, ToastContainer } from "react-toastify";
+import { Bounce, toast } from "react-toastify";
 
 const OTPVerification = ({
   otp_auth_url,
@@ -15,9 +15,7 @@ const OTPVerification = ({
   authenticationType: string;
   phone_no: string;
   hideOTPForm: () => void;
-  // verifyOTP: () => void
 }) => {
-  // const [isLoading, setIsLoading] = useState<boolean>(false);
   const otpFetcher = useFetcher<{
     detail?: string;
     is_2fa_setup?: boolean;
@@ -42,10 +40,6 @@ const OTPVerification = ({
     otpFetcher.submit({ otp: OTP }, { method: "post" });
   };
 
-  // useEffect(() => {
-  //   console.log("otpFetcher", otpFetcher);
-  // }, [otpFetcher.state === "idle" && otpFetcher.data]);
-
   useEffect(() => {
     if (otpFetcher.data && otpFetcher.data.detail) {
       toast.error(otpFetcher.data?.detail, {
@@ -64,17 +58,6 @@ const OTPVerification = ({
     }
 
     if (otpFetcher.data && otpFetcher.data.is_2fa_setup) {
-      // toast.success("OTP verified!", {
-      //   position: "top-right",
-      //   autoClose: 2000,
-      //   hideProgressBar: false,
-      //   closeOnClick: true,
-      //   pauseOnHover: true,
-      //   draggable: true,
-      //   progress: undefined,
-      //   // theme: "light",
-      //   transition: Bounce,
-      // })
       hideOTPForm();
     }
     return;

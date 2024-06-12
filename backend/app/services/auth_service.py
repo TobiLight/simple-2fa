@@ -46,10 +46,6 @@ class AuthService(BaseService):
 
         delattr(user, "password")
 
-        # if user.is_2fa_enabled:
-        #     return SignInResponse2Fa(is_2fa_enabled=True, auth_2fa_type=user.auth_2fa_type)
-        #     raise RestrictedError(detail="2FA required!")
-
         payload = Payload(
             id=str(user.id),
             email=user.email,
@@ -74,6 +70,6 @@ class AuthService(BaseService):
         user = self.user_repository.verify_otp(payload)
 
         return user
-    
+
     def logout(self, user_id: str):
         return self.user_repository.logout(user_id)

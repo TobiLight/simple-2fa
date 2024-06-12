@@ -55,22 +55,6 @@ class UserRepository(BaseRepository):
             user_2fa_type: Optional[AuthType] = None
             user_enabled_2fa: bool = False
 
-            # otp_base32: Optional[str] = None
-            # otp_auth_url: Optional[str] = None
-
-            # if schema.enable_2fa:
-            #     user_enabled_2fa = schema.enable_2fa
-
-            # if user_enabled_2fa and schema.authentication_type:
-            #     user_2fa_type = AuthType.Authenticator if schema.authentication_type.lower(
-            #     ) == 'google-authenticator' else AuthType.Sms
-
-            # if user_2fa_type == AuthType.Authenticator:
-            #     otp_base32 = pyotp.random_base32()
-
-            #     otp_auth_url = pyotp.totp.TOTP(otp_base32).provisioning_uri(
-            #         name=str(schema.email), issuer_name="2fa.com")
-
             otp_base32 = pyotp.random_base32()
 
             otp_auth_url = pyotp.totp.TOTP(otp_base32).provisioning_uri(
@@ -83,8 +67,6 @@ class UserRepository(BaseRepository):
 
             auth_type = AuthType.Sms if schema.authentication_type is not None and schema.authentication_type.lower(
             ) == 'sms' else AuthType.Authenticator
-
-            print(auth_type, schema.authentication_type.lower())
 
             query = self.model(
                 id=uuid4(),

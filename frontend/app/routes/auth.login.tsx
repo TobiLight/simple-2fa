@@ -5,10 +5,9 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { Form, Link, Navigate, useActionData } from "@remix-run/react";
+import { Form, Link, useActionData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { Bounce, toast, ToastContainer } from "react-toastify";
-import OTPForm from "~/components/OTPForm";
 import { createUserSession, getUserSession } from "~/session.server";
 
 type ActionResult = {
@@ -26,6 +25,7 @@ type ActionResult = {
   };
 };
 
+// UI Loader
 export const loader: LoaderFunction = async ({
   request,
 }: LoaderFunctionArgs) => {
@@ -36,6 +36,7 @@ export const loader: LoaderFunction = async ({
   return null;
 };
 
+// UI Actions
 export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
   let errors: ActionResult = {
     detail: "",
@@ -121,6 +122,7 @@ export async function action<ActionFunction>({ request }: ActionFunctionArgs) {
   }
 }
 
+// UI Page
 export default function Login() {
   const loginAction = useActionData() as ActionResult;
   const [showOTPForm, setShowOTPForm] = useState<boolean>(false);
