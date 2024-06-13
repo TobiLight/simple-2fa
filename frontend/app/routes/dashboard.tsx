@@ -6,20 +6,32 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { Form, Link, Outlet, useLoaderData } from "@remix-run/react";
+import { Form, Link, Outlet } from "@remix-run/react";
 import {
   destroySession,
-  destroyUserSession,
   getAccessToken,
   getUser,
   getUserSession,
-  requireUserSession,
 } from "~/session.server";
+
+type UserType = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_no: string;
+  is_2fa_enabled: boolean;
+  is_2fa_setup: boolean;
+  is_otp_verified: boolean;
+  otp_secret: string;
+  otp_auth_url: string;
+  auth_2fa_type: string;
+}
 
 export const loader: LoaderFunction = async ({
   request,
 }: LoaderFunctionArgs) => {
-  const user = await getUser(request);
+  const user = await getUser(request) as UserType;
 
   if (!user)
     return redirect("/auth/login", {

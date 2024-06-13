@@ -30,6 +30,10 @@ type UserType = {
   auth_2fa_type: string;
 };
 
+export async function load() {
+  return null
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   const accessToken = await getAccessToken(request);
 
@@ -75,9 +79,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Dashboard() {
   const loaderData = useRouteLoaderData("routes/dashboard") as UserType;
-  const actionData = useActionData() as UserType;
+  const actionData = useActionData();
 
   const [displayOTPForm, setDisplayOTPForm] = useState<boolean>(false);
+  const [displayOTPSuccess, setDisplayOTPSuccess] = useState<boolean>(false)
 
   const otpFetcher = useFetcher<{
     detail?: string;
@@ -89,28 +94,46 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (otpFetcher.data && otpFetcher.data.is_2fa_setup) {
-      toast.success("2FA setup complete", {
-        autoClose: 2000,
-        transition: Bounce,
-      });
+      // toast.success("2FA setup complete", {
+      //   autoClose: 2000,
+      //   transition: Bounce,
+      // });
+      setDisplayOTPSuccess(true) 
+      return;     
     }
     return;
   }, [otpFetcher.state === "idle"]);
 
-  useEffect(() => {
-    if (actionData && actionData.is_2fa_setup && actionData.is_otp_verified)
-      toast.success("2FA setup complete!", {
-        autoClose: 2000,
-        transition: Bounce,
-      });
-  }, [actionData]);
+  // useEffect(() => {
+  //   console.log(actionData);
+  //   if (actionData && actionData.is_2fa_setup && actionData.is_otp_verified)
+  //     toast.success("2FA setup complete!", {
+  //       autoClose: 2000,
+  //       transition: Bounce,
+  //     });
+  // }, [actionData]);
 
   return (
     <div className="pt-20 min-h-[inerit] bg-purple-500">
       <ToastContainer />
 
-      <section className="bg-ct-blue-600  min-h-screen pt-10 w-11/12 mx-auto sm:w-5/6">
-        <div className="max-w-4xl p-12 mx-auto bg-white rounded-md h-auto flex gap-20 justify-center items-start">
+      {displayOTPSuccess && (
+        <div className="bg-white px-10 py-5 max-w-4xl rounded w-fit mx-auto flex items-center relative">
+          <p className="text-green-500 font-bold text-center">
+            2FA setup complete!
+          </p>
+          <div
+            className="w-8 h-8 rounded-full bg-white border absolute -top-3 -right-3 flex items-center justify-center cursor-pointer"
+            onClick={(e) => {
+              setDisplayOTPSuccess(false)
+            }}
+          >
+            <p className="font-bold text-red-500">x</p>
+          </div>
+        </div>
+      )}
+      <section className="bg-ct-blue-600 pb-10 min-h-screen pt-10 w-11/12 mx-auto sm:w-5/6">
+        <div className="max-w-4xl p-12 mx-auto bg-white rounded-md h-auto flex flex-col md:flex-row gap-20 justify-center items-start">
           <div className="flex-grow-2">
             <h1 className="text-2xl font-semibold">Profile Page</h1>
             <div className="mt-8">
