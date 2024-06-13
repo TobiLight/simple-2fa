@@ -184,7 +184,7 @@ export default function Login() {
 
   return (
     <div className="min-h-[inherit] py-20 flex flex-col justify-center items-center bg-purple-500">
-      <ToastContainer />
+      {/* <ToastContainer /> */}
       <div className="w-full">
         <h1 className="text-center font-semibold text-4xl text-yellow-300 pb-12">
           Login
@@ -234,6 +234,10 @@ export default function Login() {
                 className="px-4 py-2 rounded w-full shadow-inner border focus:outline-purple-500"
               />
             </label>
+
+            {loginAction && loginAction.detail && (
+              <p className="text-red-500 font-semibold">{loginAction.detail}</p>
+            )}
 
             <button
               disabled={isLoading}
